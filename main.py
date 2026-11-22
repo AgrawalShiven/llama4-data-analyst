@@ -9,13 +9,14 @@ import matplotlib.pyplot as plt
 import fitz
 import re
 import matplotlib
+from dotenv import load_dotenv
 matplotlib.use("Agg")
-import os
+
+load_dotenv()
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
 if not TOGETHER_API_KEY:
-    import streamlit as st
-    st.error("API key not found. Please set TOGETHER_API_KEY as a repository variable.")
+    st.error("API key not found. Please set TOGETHER_API_KEY in your environment or a .env file.")
     st.stop()
 
 
@@ -71,20 +72,21 @@ def extract_pdf_text(file):
 
 def process_file(uploaded_file):
     file_type = uploaded_file.type.split('/')[-1]
+    file_name = uploaded_file.name.lower()
 
-    if file_type in ["csv", "vnd.ms-excel"]:
-        df = pd.read_csv(uploaded_file)
-        return df.head(100).to_string(), "data"
-
-    elif file_type == "xlsx":
+    if file_name.endswith(".xlsx") or file_type == "vnd.openxmlformats-officedocument.spreadsheetml.sheet":
         df = pd.read_excel(uploaded_file)
         return df.head(100).to_string(), "data"
 
-    elif file_type == "plain":
+    elif file_name.endswith(".csv") or file_type in ["csv", "vnd.ms-excel"]:
+        df = pd.read_csv(uploaded_file)
+        return df.head(100).to_string(), "data"
+
+    elif file_name.endswith(".txt") or file_type == "plain":
         content = uploaded_file.read().decode("utf-8")
         return content[:1250], "text"
 
-    elif file_type == "pdf":
+    elif file_name.endswith(".pdf") or file_type == "pdf":
         text = extract_pdf_text(uploaded_file)
         return text, "text"
 
